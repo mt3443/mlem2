@@ -111,6 +111,10 @@ def mlem2(lers_file_name):
 
 	attribute_value_pairs = deepcopy(initial_av_pairs)
 	set_av_pairs = deepcopy(initial_set_av_pairs)
+	av_pair_dict = {}
+
+	for k, v in zip(attribute_value_pairs, set_av_pairs):
+		av_pair_dict[k] = v
 
 	covered_cases = set()
 	
@@ -120,7 +124,7 @@ def mlem2(lers_file_name):
 		current_concept = set(concept)
 		temp_intersection = set(range(1, len(dataset) + 1))
 		conditions = []
-		
+
 		while len(current_concept) != 0:
 			ints_and_cards = get_ints_and_cards(current_concept, set_av_pairs)
 			best_av_pair_index, best_int_and_card = get_best_intersection(ints_and_cards)
@@ -131,24 +135,44 @@ def mlem2(lers_file_name):
 			temp_intersection = best_av_pair.intersection(temp_intersection)
 
 			if temp_intersection.issubset(current_concept):
-				# TODO: SIMPLIFY RULE
 
-				# while RULE - FIRST CONDITION STILL WORKS
-					# REMOVE FIRST CONDITION
+				# Simplify the rule if possible
+				for i, condition in enumerate(conditions):
+					new_rule = conditions[:i] + conditions[i + 1:]
+					new_cover = set(range(1, len(dataset) + 1))
+
+					for c in new_rule:
+						new_cover.intersection_update(av_pair_dict[c])
+
+					if new_cover.issubset(concept):
+						conditions.remove(condition)
 
 				covered_cases = covered_cases.union(temp_intersection)
 				current_concept = set(concept) - covered_cases
-				rules.append((conditions, (decision, concept_name)))
+				rules.append((conditions, (decision, concept_name), temp_intersection))
 				attribute_value_pairs = deepcopy(initial_av_pairs)
 				set_av_pairs = deepcopy(initial_set_av_pairs)
 				conditions = []
 				temp_intersection = set(range(1, len(dataset) + 1))
 			else:
-				current_concept = current_concept.intersection(temp_intersection)
+				current_concept.intersection_update(temp_intersection)
 				del set_av_pairs[best_av_pair_index]
 				del attribute_value_pairs[best_av_pair_index]
 
-	# TODO: SIMPLIFY RULE SET
+	# Simplify ruleset if possible
+	for i, rule in enumerate(rules):
+		# Remove a rule
+		new_ruleset = rules[:i] + rules[i + 1:]
+		all_cases = set(range(1, len(dataset) + 1))
+		temp_covered_cases = set()
+
+		# Check which cases are covered while omitting the rule
+		for r in new_ruleset:
+			temp_covered_cases = temp_covered_cases.union(r[2])
+
+		# If all cases are still covered, remove the rule, as it is redundant
+		if len(all_cases - temp_covered_cases) == 0:
+			rules.remove(rule)
 
 	for rule in rules:
 		conditions = [str(x) for x in rule[0]]
