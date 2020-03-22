@@ -1,0 +1,44 @@
+! Decision table produced by LERS (C version 1.0)
+< a a a a a a a a d >
+! First the attribute names list ... 
+!  
+[ GLS100 SHS100 NHS100 Solar ApTr WSOI CO2Resid CO2Trend NH850-300  ]
+!   
+! Now comes the actual data. Please note that one example 
+! does NOT necessarily occupy one physical line
+!   
+cold cold cold 67 0.932 1.1 -1.2 329.1 cold 
+cold cold cold 13 0.930 1.5 -2.3 335.2 cold 
+cold cold cold 15 0.919 -0.3 -0.2 321.7 cold 
+cool cool cold 35 0.931 1.8 -1.0 332.7 cold 
+cool cool cold 69 0.930 0.3 -1.7 330.3 cold 
+cool cool cold 18 0.923 0.0 0.4 346.2 cold 
+cool cool cold 106 0.927 0.2 -1.8 325.4 cold 
+cool cool cool 16 0.928 -0.0 -2.2 334.0 cool 
+cool cool cool 10 0.916 -0.7 -0.0 320.5 cool 
+warm hot cool 114 0.853 0.5 -0.6 342.5 cool 
+cool warm cool 42 0.916 0.1 0.5 345.0 cool 
+warm hot cool 91 0.931 -1.5 -1.2 337.6 cool 
+warm hot cool 106 0.929 -0.7 -1.0 326.6 cool 
+cool cool warm 28 0.924 0.4 0.4 319.3 cool 
+cool cool cool 94 0.922 0.7 -2.0 324.2 cool 
+cool cool cool 38 0.934 0.9 1.5 318.1 warm 
+cool warm cool 14 0.927 -0.1 0.4 347.4 warm 
+warm cool warm 47 0.924 -0.6 -0.6 323.0 warm 
+hot hot warm 28 0.935 -0.1 -1.7 336.4 warm 
+hot hot warm 148 0.928 -0.0 -1.3 338.9 warm 
+hot warm hot 105 0.932 -0.7 -1.4 327.9 warm 
+hot hot hot 112 0.933 0.2 2.5 315.6 warm 
+hot hot hot 154 0.930 -0.2 -0.7 340.1 hot 
+hot hot hot 38 0.933 -1.1 -0.2 331.5 hot 
+warm cool warm 154 0.930 1.1 2.7 351.1 hot 
+hot warm hot 54 0.934 0.3 1.9 316.9 hot 
+hot hot warm 141 0.930 -0.1 -0.5 341.3 hot 
+hot hot hot 32 0.929 -1.3 1.2 348.6 hot 
+hot warm hot 185 0.933 -1.0 2.7 313.2 hot 
+hot hot hot 75 0.898 -3.1 0.2 343.7 hot 
+hot hot hot 159 0.935 -1.1 2.3 314.4 hot 
+hot hot hot 143 0.932 -1.1 2.2 352.3 hot 
+hot hot hot 98 0.931 -0.5 2.8 349.9 hot 
+!  
+! end-of-file 
