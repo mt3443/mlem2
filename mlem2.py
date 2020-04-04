@@ -2,7 +2,7 @@ from copy import deepcopy
 import os
 import re
 
-range_re = re.compile('\d+(?:\.\d+)?\.\.\d+(?:\.\d+)?')
+numerical_re = re.compile('-?\d+(?:\.\d+)?')
 
 def get_input_file_name():
 	input_file_name = input('Enter input file name: ')
@@ -18,10 +18,10 @@ def parse_lers_file(lers_file_name):
 	contents = open(lers_file_name).read().splitlines()
 
 	# Remove comments
-	for line in contents:
-		for i, char in enumerate(line):
+	for i, line in enumerate(contents):
+		for j, char in enumerate(line):
 			if char == '!':
-				line = line[:i]
+				contents[i] = line[:j]
 	contents = [i for i in contents if i]
 
 	# Parse LERS file
@@ -59,14 +59,58 @@ def get_concepts(dataset, decision):
 
 def get_attribute_value_pairs(attributes, dataset):
 	"""Returns sets of all possible values for all attributes (a,v)"""
+
+	# Check what attributes, if any, have numerical values
+	numerical_attributes = []
+	for attribute in attributes:
+		for case in dataset:
+			value = case[attribute]
+
+			if value in ['*', '-', '?']:
+				continue
+
+			if numerical_re.match(value):
+				numerical_attributes.append(attribute)
+
+			break
+
 	attribute_value_pairs = []
 	for attribute in attributes:
-		possible_values = set()
-		for row in dataset:
-			value = row[attribute]
-			if value not in possible_values:
-				possible_values.add(value)
-				attribute_value_pairs.append((attribute, value))
+		# If attribute is numeric
+		if attribute in numerical_attributes:
+
+			# Get all values
+			values = set()
+			for case in dataset:
+				value = case[attribute]
+				if value not in ['*', '-', '?']:
+					values.add(float(value))
+
+			# Calculate cutpoints
+			cutpoints = []
+			values = sorted(values)
+			for i, value in enumerate(values):
+				if i + 1 in range(len(values)):
+					next_value = values[i + 1]
+					cutpoint = (value + next_value) / 2
+					cutpoints.append(cutpoint)
+
+			# Calculate ranges
+			for cutpoint in cutpoints:
+				r1 = '{}..{}'.format(values[0], cutpoint)
+				r2 = '{}..{}'.format(cutpoint, values[-1])
+				attribute_value_pairs.append((attribute, r1))
+				attribute_value_pairs.append((attribute, r2))
+
+		else:
+
+			possible_values = set()
+			for row in dataset:
+				value = row[attribute]
+				if value not in possible_values:
+					possible_values.add(value)
+					attribute_value_pairs.append((attribute, value))
+					
 	return attribute_value_pairs
 
 def get_set_av_pairs(av_pairs, dataset):
@@ -102,6 +146,9 @@ def get_best_intersection(ints_and_cards):
 				return index, i
 	else:
 		return s[0]
+
+# TODO: ADD CUTPOINTS FOR NUMERICAL VALUES
+# TODO: ADD ? - AND * VALUES
 
 def mlem2(lers_file_name):
 	attributes, decision, dataset = parse_lers_file(lers_file_name)
@@ -174,6 +221,7 @@ def mlem2(lers_file_name):
 		if len(all_cases - temp_covered_cases) == 0:
 			rules.remove(rule)
 
+	# Print rules
 	for rule in rules:
 		conditions = [str(x) for x in rule[0]]
 		decision = rule[1]
