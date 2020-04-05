@@ -1,12 +1,9 @@
-! comment
 < a a a d > 
-! another comment
-[ Size Ink-color Body-color Attitude  ] 
-98 blue blue positive
-98 blue black negative
-100 red blue positive
-96 black blue negative
-96 black blue negative
-102 blue blue positive
-100 black black negative
-102 blue black negative
+[ Age Gender Education Hobby  ] 
+32 male higher fishing
+25 female primary fishing
+27 male higher fishing
+25 male primary fishing
+48 male primary shooting
+27 female primary shooting
+65 male primary shooting

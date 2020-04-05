@@ -3,6 +3,7 @@ import os
 import re
 
 numerical_re = re.compile('-?\d+(?:\.\d+)?')
+range_re = re.compile('-?\d+(?:\.\d+)?\.\.-?\d+(?:\.\d+)?')
 
 def get_input_file_name():
 	input_file_name = input('Enter input file name: ')
@@ -116,13 +117,24 @@ def get_attribute_value_pairs(attributes, dataset):
 def get_set_av_pairs(av_pairs, dataset):
 	"""Returns the set of all cases matching an attribute value pair [(a,v)]"""
 	set_av_pairs = []
-	for av_pair in av_pairs:
+	for attribute, value in av_pairs:
 		cases = set()
 		row_counter = 0
 		for row in dataset:
 			row_counter += 1
-			if row[av_pair[0]] == av_pair[1]:
+			
+			# Match symbolic values
+			if row[attribute] == value:
 				cases.add(row_counter)
+				continue
+
+			# Match numerical values
+			if range_re.match(value):
+				lower_bound = float(value.split('..')[0])
+				upper_bound = float(value.split('..')[1])
+				if float(row[attribute]) >= lower_bound and float(row[attribute]) <= upper_bound:
+					cases.add(row_counter)
+			
 		set_av_pairs.append(cases)
 	return set_av_pairs
 
@@ -177,6 +189,29 @@ def mlem2(lers_file_name):
 			best_av_pair_index, best_int_and_card = get_best_intersection(ints_and_cards)
 			best_av_pair = set_av_pairs[best_av_pair_index]
 			condition = attribute_value_pairs[best_av_pair_index]
+
+			# Check for attempted addition of nonsensical numerical ranges
+			# If the rule we're trying to add has a range
+			if range_re.match(condition[1]):
+				bad_rule = False
+				for c_attribute, c_value in conditions:
+					# And there exists another rule with a range
+					if condition[0] == c_attribute and range_re.match(c_value):
+						a = float(c_value.split('..')[0]) # old lower bound
+						b = float(c_value.split('..')[1]) # old upper bound
+						c = float(condition[1].split('..')[0]) # new lower bound
+						d = float(condition[1].split('..')[1]) # new upper bound
+
+						# New range is more general or no overlap
+						if (a == c and d > b) or (c < a and d == b) or (b < c) or (d < a):
+							del set_av_pairs[best_av_pair_index]
+							del attribute_value_pairs[best_av_pair_index]
+							bad_rule = True
+							break
+					
+				if bad_rule:
+					continue
+
 			conditions.append(condition)
 
 			temp_intersection = best_av_pair.intersection(temp_intersection)
@@ -184,6 +219,39 @@ def mlem2(lers_file_name):
 			if temp_intersection.issubset(current_concept):
 
 				# Simplify the rule if possible
+
+				# Try to simplify ranges
+				range_attributes = set()
+				for attribute, value in conditions:
+					if range_re.match(value):
+						range_attributes.add(attribute)
+
+				for range_attribute in range_attributes:
+					highest_lower_bound = None
+					lowest_upper_bound = None
+
+					conditions_to_remove = []
+
+					for attribute, value in conditions:
+						if attribute == range_attribute:
+							lower_bound = float(value.split('..')[0])
+							upper_bound = float(value.split('..')[1])
+
+							if lowest_upper_bound is None or upper_bound < lowest_upper_bound:
+								lowest_upper_bound = upper_bound
+
+							if highest_lower_bound is None or lower_bound > highest_lower_bound:
+								highest_lower_bound = lower_bound
+
+							conditions_to_remove.append((attribute, value))
+
+					for condition in conditions_to_remove:
+						conditions.remove(condition)
+
+					new_range = '{}..{}'.format(highest_lower_bound, lowest_upper_bound)
+					conditions.append((range_attribute, new_range))
+
+				# Try to drop unnecessary conditions
 				for i, condition in enumerate(conditions):
 					new_rule = conditions[:i] + conditions[i + 1:]
 					new_cover = set(range(1, len(dataset) + 1))
@@ -231,8 +299,14 @@ def mlem2(lers_file_name):
 		z = 0
 		for row in dataset:
 			match = True
-			for condition in rule[0]:
-				if row[condition[0]] != condition[1]:
+			for attribute, value in rule[0]:
+				if range_re.match(value):
+					lower_bound = float(value.split('..')[0])
+					upper_bound = float(value.split('..')[1])
+					if float(row[attribute]) < lower_bound or float(row[attribute]) > upper_bound:
+						match = False
+						break
+				elif row[attribute] != value:
 					match = False
 					break
 			if match:
