@@ -128,7 +128,7 @@ class Dataset:
 									lower_bound = float(v.split('..')[0])
 									upper_bound = float(v.split('..')[1])
 
-									if float(value) <= upper_bound and float(value) >= lower_bound:
+									if float(concept_value) <= upper_bound and float(concept_value) >= lower_bound:
 										self.av_pairs[(attribute, v)].add(case)
 						else:
 							for a, v in self.av_pairs:
@@ -182,8 +182,32 @@ class Dataset:
 					if len(self.v[(case, attribute)]) != 0:
 						s = set()
 						for v in self.v[(case, attribute)]:
-							s = s.union(self.av_pairs[(attribute, v)])
+							if numerical_re.match(v):
+								for av_pair in self.av_pairs:
+									av_pair_attribute = av_pair[0]
+									av_pair_value = av_pair[1]
+
+									if av_pair_attribute == attribute and range_re.match(av_pair_value):
+										lower_bound = float(av_pair_value.split('..')[0])
+										upper_bound = float(av_pair_value.split('..')[1])
+
+										if float(v) <= upper_bound and float(v) >= lower_bound:
+											s = s.union(self.av_pairs[av_pair])
+							else:
+								s = s.union(self.av_pairs[(attribute, v)])
 						characteristic_set.intersection_update(s)
+				elif numerical_re.match(value):
+					for av_pair in self.av_pairs:
+						av_pair_attribute = av_pair[0]
+						av_pair_value = av_pair[1]
+
+						if av_pair_attribute == attribute and range_re.match(av_pair_value):
+							lower_bound = float(av_pair_value.split('..')[0])
+							upper_bound = float(av_pair_value.split('..')[1])
+
+							if float(value) <= upper_bound and float(value) >= lower_bound:
+								characteristic_set.intersection_update(self.av_pairs[av_pair])
+
 				elif value not in ['*', '?']:
 					characteristic_set.intersection_update(self.av_pairs[(attribute, value)])
 			self.characteristic_sets.append(characteristic_set)
@@ -340,24 +364,29 @@ class Dataset:
 			y = 0
 			z = 0
 
-			for row in self.dataset:
+			for i, row in enumerate(self.dataset):
+				case = i + 1
 				match = True
 				for attribute, value in rule[0]:
-					if range_re.match(value):
+
+					if row[attribute] == '?':
+						match = False
+						break
+
+					if row[attribute] == '*':
+						continue
+
+					if row[attribute] == '-' and value not in self.v[(case, attribute)]:
+						match = False
+						break
+
+					if range_re.match(value) and not range_re.match(row[attribute]):
 						lower_bound = float(value.split('..')[0])
 						upper_bound = float(value.split('..')[1])
 						
-						if range_re.match(row[attribute]):
-							lower_bound_1 = float(row[attribute].split('..')[0])
-							upper_bound_1 = float(row[attribute].split('..')[1])
-
-							if lower_bound != lower_bound_1 or upper_bound != upper_bound_1:
-								match = False
-								break
-						else:
-							if float(row[attribute]) < lower_bound or float(row[attribute]) > upper_bound:
-								match = False
-								break
+						if float(row[attribute]) < lower_bound or float(row[attribute]) > upper_bound:
+							match = False
+							break
 					elif row[attribute] != value:
 						match = False
 						break
@@ -400,13 +429,9 @@ def get_output_file_name():
 
 def main():
 
-	# input_file_name = get_input_file_name()
-	# concept_approximation = get_concept_approximation()
-	# output_file_name = get_output_file_name()
-
-	input_file_name = 'austr-aca-35.txt'
-	concept_approximation = 'upper'
-	output_file_name = 'a.txt'
+	input_file_name = get_input_file_name()
+	concept_approximation = get_concept_approximation()
+	output_file_name = get_output_file_name()
 
 	d = Dataset(input_file_name, concept_approximation, output_file_name)
 	d.mlem2()
